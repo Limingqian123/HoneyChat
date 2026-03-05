@@ -1,0 +1,58 @@
+[
+    {
+        "command": "ls -la",
+        "output": "total 64\ndrwxr-xr-x 1 user user  4096 Mar  1 10:30 .\ndrwxr-xr-x 1 root root  4096 Feb 28 15:20 ..\n-rw-r--r-- 1 user user   220 Feb 28 15:20 .bash_logout\n-rw-r--r-- 1 user user  3771 Feb 28 15:20 .bashrc\n-rw-r--r-- 1 user user   807 Feb 28 15:20 .profile\n-rw-r--r-- 1 user user     0 Mar  1 10:30 file1.txt\n-rw-r--r-- 1 user user    42 Mar  1 10:30 file2.txt"
+    },
+    {
+        "command": "pwd",
+        "output": "/home/user"
+    },
+    {
+        "command": "whoami",
+        "output": "user"
+    },
+    {
+        "command": "id",
+        "output": "uid=1000(user) gid=1000(user) groups=1000(user),4(adm),27(sudo)"
+    },
+    {
+        "command": "uname -a",
+        "output": "Linux honeypot 5.15.0-91-generic #101-Ubuntu SMP Thu Nov 16 15:39:03 UTC 2023 x86_64 x86_64 x86_64 GNU/Linux"
+    },
+    {
+        "command": "cat /etc/passwd",
+        "output": "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nsync:x:4:65534:sync:/bin:/bin/sync\ngames:x:5:60:games:/usr/games:/usr/sbin/nologin\nman:x:6:12:man:/var/cache/man:/usr/sbin/nologin\nlp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin\nmail:x:8:8:mail:/var/mail:/usr/sbin/nologin\nnews:x:9:9:news:/var/spool/news:/usr/sbin/nologin\nuucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin\nproxy:x:13:13:proxy:/bin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nbackup:x:34:34:backup:/var/backups:/usr/sbin/nologin\nlist:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin\nirc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin\ngnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin\nsystemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin\nsystemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin\nsystemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin\nmessagebus:x:103:106::/nonexistent:/usr/sbin/nologin\nsyslog:x:104:110::/home/syslog:/usr/sbin/nologin\n_apt:x:105:65534::/nonexistent:/usr/sbin/nologin\ntss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false\nuuidd:x:107:112::/run/uuidd:/usr/sbin/nologin\ntcpdump:x:108:113::/nonexistent:/usr/sbin/nologin\nuser:x:1000:1000:,,,:/home/user:/bin/bash"
+    },
+    {
+        "command": "ps aux",
+        "output": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot           1  0.0  0.1 169096 11352 ?        Ss   Mar01   0:01 /sbin/init\nroot           2  0.0  0.0      0     0 ?        S    Mar01   0:00 [kthreadd]\nroot           3  0.0  0.0      0     0 ?        I<   Mar01   0:00 [rcu_gp]\nroot           4  0.0  0.0      0     0 ?        I<   Mar01   0:00 [rcu_par_gp]\nroot           5  0.0  0.0      0     0 ?        I    Mar01   0:00 [kworker/0:0-events]\n... (truncated for brevity)"
+    },
+    {
+        "command": "df -h",
+        "output": "Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        98G   12G   81G  13% /\ntmpfs           7.8G     0  7.8G   0% /dev/shm\n/dev/sdb1       500G  300G  200G  60% /data"
+    },
+    {
+        "command": "ifconfig",
+        "output": "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n        inet 192.168.1.100  netmask 255.255.255.0  broadcast 192.168.1.255\n        inet6 fe80::5054:ff:fe12:3456  prefixlen 64  scopeid 0x20<link>\n        ether 52:54:00:12:34:56  txqueuelen 1000  (Ethernet)\n        RX packets 12345  bytes 6789012 (6.5 MiB)\n        RX errors 0  dropped 0  overruns 0  frame 0\n        TX packets 6789  bytes 1234567 (1.2 MiB)\n        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0\n\nlo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536\n        inet 127.0.0.1  netmask 255.0.0.0\n        inet6 ::1  prefixlen 128  scopeid 0x10<host>\n        loop  txqueuelen 1000  (Local Loopback)\n        RX packets 100  bytes 5000 (4.9 KiB)\n        RX errors 0  dropped 0  overruns 0  frame 0\n        TX packets 100  bytes 5000 (4.9 KiB)\n        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0"
+    },
+    {
+        "command": "netstat -tulpn",
+        "output": "Active Internet connections (only servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    \ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      1234/sshd           \ntcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      5678/mysqld         \ntcp6       0      0 :::80                   :::*                    LISTEN      9012/apache2        \ntcp6       0      0 :::22                   :::*                    LISTEN      1234/sshd           \nudp        0      0 0.0.0.0:68              0.0.0.0:*                           890/dhclient"
+    },
+    {
+        "command": "service --status-all",
+        "output": " [ + ]  apache2\n [ - ]  bluetooth\n [ + ]  cron\n [ ? ]  docker\n [ + ]  mysql\n [ - ]  networking\n [ + ]  ssh\n [ + ]  udev"
+    },
+    {
+        "command": "systemctl status ssh",
+        "output": "● ssh.service - OpenBSD Secure Shell server\n     Loaded: loaded (/lib/systemd/system/ssh.service; enabled; vendor preset: enabled)\n     Active: active (running) since Mon 2026-03-02 10:30:45 UTC; 1 day 2h ago\n       Docs: man:sshd(8)\n             man:sshd_config(5)\n   Main PID: 1234 (sshd)\n      Tasks: 1 (limit: 2345)\n     Memory: 5.2M\n        CPU: 123ms\n     CGroup: /system.slice/ssh.service\n             └─1234 sshd: /usr/sbin/sshd -D [listener] 0 of 10-100 startups"
+    },
+    {
+        "command": "echo hello",
+        "output": "hello"
+    },
+    {
+        "command": "date",
+        "output": "Wed Mar  4 12:34:56 UTC 2026"
+    }
+]

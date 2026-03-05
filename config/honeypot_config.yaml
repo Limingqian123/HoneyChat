@@ -1,0 +1,39 @@
+# config/honeypot_config.yaml
+# HoneyChat 蜜罐服务配置文件
+# 此文件中的配置将被默认值覆盖，但环境变量具有最高优先级
+
+# 服务基础配置
+service_name: "honeychat-honeypot"        # 服务名称，用于日志标识
+log_level: "INFO"                          # 日志级别: DEBUG, INFO, WARNING, ERROR
+
+# 网络监听配置
+ssh_host: "0.0.0.0"                        # SSH 服务监听地址
+ssh_port: 2222                              # SSH 服务监听端口
+http_host: "0.0.0.0"                        # HTTP 服务监听地址
+http_port: 8080                              # HTTP 服务监听端口
+
+# 后端服务地址
+rag_engine_url: "http://rag-engine:8000"    # RAG 引擎服务地址
+dashboard_url: "http://dashboard:5000"       # 仪表盘服务地址
+
+# 威胁情报配置
+threat_intel_api_key: ""                     # 威胁情报 API 密钥（如 AbuseIPDB），留空表示禁用
+threat_intel_cache_ttl: 3600                  # IP 信誉缓存有效期（秒）
+enable_threat_intel: true                     # 是否启用威胁情报查询
+
+# 路径配置
+log_dir: "/app/logs"                          # 日志文件目录
+config_file: "/app/config.yaml"                # 配置文件路径（当前文件）
+
+# 性能调优
+max_connections: 100                           # 最大并发连接数
+connection_timeout: 300                        # 连接超时时间（秒）
+command_timeout: 30                             # 单个命令执行超时（秒）
+
+# 会话管理
+session_idle_timeout: 600                       # 会话空闲超时（秒）
+max_session_history: 1000                       # 每个会话最多保存的命令历史条数
+
+# RAG 引擎调用参数
+rag_request_timeout: 10                          # 调用 RAG 引擎的超时时间（秒）
+rag_max_retries: 3                               # 调用 RAG 引擎的最大重试次数

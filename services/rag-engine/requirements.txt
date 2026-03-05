@@ -1,0 +1,41 @@
+# services/rag-engine/requirements.txt
+# HoneyChat RAG 引擎服务依赖清单
+
+# Web 框架
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+
+# 向量数据库
+chromadb==0.4.22
+
+# LLM 支持 (CPU 量化版本)
+llama-cpp-python==0.2.55
+
+# 或者可选使用 gpt4all (二选一)
+# gpt4all==2.2.1
+
+# 嵌入模型 (用于向量化)
+sentence-transformers==2.5.1
+
+# 配置管理
+pydantic==2.6.1
+pydantic-settings==2.1.0
+python-dotenv==1.0.1
+PyYAML==6.0.1
+
+# 异步 HTTP 客户端 (用于可能的调用)
+httpx==0.27.0
+
+# 日志处理
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# 工具库
+numpy==1.26.3
+tqdm==4.66.2
+
+# 健康检查 (可选)
+requests==2.31.0
+
+# 类型提示
+typing-extensions==4.10.0

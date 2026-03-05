@@ -1,0 +1,24 @@
+# config/dashboard_config.yaml
+# HoneyChat Dashboard 服务配置文件
+# 此文件中的配置将被默认值覆盖，环境变量具有最高优先级
+
+# 服务基础配置
+service_name: "honeychat-dashboard"      # 服务名称
+log_level: "INFO"                         # 日志级别: DEBUG, INFO, WARNING, ERROR
+
+# Web 服务配置
+host: "0.0.0.0"                           # 监听地址
+port: 5000                                 # 监听端口
+debug: false                               # 是否开启调试模式 (生产环境必须 false)
+
+# 数据库配置
+database_url: "sqlite:///data/events.db"   # SQLite 数据库路径
+database_pool_size: 20                      # 连接池大小
+database_max_overflow: 10                    # 连接池最大溢出
+
+# 安全配置
+secret_key: "dev-secret-key-change-in-production"  # Flask 密钥，务必修改
+session_lifetime: 86400                              # 会话生命周期 (秒)
+
+# CORS 配置
+cors_origins: "*"                                    # 允许的 CORS 来源，多个用逗号分隔

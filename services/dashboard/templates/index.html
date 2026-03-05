@@ -1,0 +1,412 @@
+<!-- services/dashboard/templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoneyChat Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 20px;
+        }
+        .card {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .event-row {
+            transition: background-color 0.3s;
+        }
+        .event-row:hover {
+            background-color: #f1f3f5;
+        }
+        .threat-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        .threat-tag.malicious {
+            background-color: #dc3545;
+            color: white;
+        }
+        .threat-tag.confidence-high {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .threat-tag.confidence-medium {
+            background-color: #ffc107;
+            color: black;
+        }
+        .badge-protocol {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+        #events-table {
+            max-height: 600px;
+            overflow-y: auto;
+            display: block;
+        }
+        .command-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .response-preview {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .filter-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4"><i class="fas fa-shield-halved me-2"></i>HoneyChat 攻击事件仪表盘</h1>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card text-white bg-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">总事件数</h6>
+                                <h2 id="stat-total">0</h2>
+                            </div>
+                            <i class="fas fa-bug fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">独立 IP</h6>
+                                <h2 id="stat-ips">0</h2>
+                            </div>
+                            <i class="fas fa-network-wired fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title">最后事件</h6>
+                                <h6 id="stat-last" class="mb-0">从未</h6>
+                            </div>
+                            <i class="fas fa-clock fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 过滤器 -->
+        <div class="filter-section">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label for="filter-ip" class="form-label"><i class="fas fa-filter me-1"></i>IP 地址过滤</label>
+                    <input type="text" class="form-control" id="filter-ip" placeholder="例如 192.168.1.100">
+                </div>
+                <div class="col-md-5">
+                    <label for="filter-session" class="form-label"><i class="fas fa-id-card me-1"></i>会话 ID 过滤</label>
+                    <input type="text" class="form-control" id="filter-session" placeholder="会话 ID">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" id="btn-apply-filter"><i class="fas fa-search me-1"></i>应用</button>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <button class="btn btn-outline-secondary btn-sm" id="btn-clear-filter"><i class="fas fa-times me-1"></i>清除过滤</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 事件表格 -->
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-list me-2"></i>实时攻击事件</span>
+                <span class="badge bg-light text-dark" id="event-count">0</span>
+            </div>
+            <div id="events-table">
+                <table class="table table-hover mb-0">
+                    <thead class="sticky-top bg-light">
+                        <tr>
+                            <th>时间</th>
+                            <th>协议</th>
+                            <th>源 IP</th>
+                            <th>命令</th>
+                            <th>响应预览</th>
+                            <th>威胁标签</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-body">
+                        <!-- 事件动态插入 -->
+                        <tr id="loading-row">
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-spinner fa-spin me-2"></i>加载事件...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 事件详情模态框 -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>事件详情</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="modal-command" class="bg-light p-3 rounded" style="max-height: 200px; overflow: auto;"></pre>
+                    <h6 class="mt-3">响应</h6>
+                    <pre id="modal-response" class="bg-light p-3 rounded" style="max-height: 300px; overflow: auto;"></pre>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <strong>会话 ID:</strong> <span id="modal-session"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>客户端 IP:</strong> <span id="modal-ip"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>协议:</strong> <span id="modal-protocol"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>时间戳:</strong> <span id="modal-timestamp"></span>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <strong>威胁标签:</strong> <span id="modal-tags"></span>
+                        </div>
+                        <div class="col-12 mt-2" id="modal-error" style="display: none;">
+                            <strong>错误:</strong> <span class="text-danger" id="modal-error-text"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 依赖 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 初始化 Socket.IO
+            const socket = io();
+
+            // 当前过滤条件
+            let currentFilter = {
+                ip: '',
+                session: ''
+            };
+
+            // Bootstrap 模态框实例
+            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+
+            // 加载初始事件
+            loadEvents();
+            loadStats();
+
+            // Socket.IO 监听新事件
+            socket.on('new_event', function(event) {
+                // 如果事件匹配当前过滤条件，添加到表格顶部
+                if (matchesFilter(event)) {
+                    addEventRow(event, true); // prepend
+                }
+                updateStats(); // 更新统计
+            });
+
+            // 应用过滤按钮
+            $('#btn-apply-filter').click(function() {
+                currentFilter.ip = $('#filter-ip').val().trim();
+                currentFilter.session = $('#filter-session').val().trim();
+                loadEvents();
+            });
+
+            // 清除过滤按钮
+            $('#btn-clear-filter').click(function() {
+                $('#filter-ip').val('');
+                $('#filter-session').val('');
+                currentFilter.ip = '';
+                currentFilter.session = '';
+                loadEvents();
+            });
+
+            // 点击事件行查看详情
+            $(document).on('click', '.view-event', function() {
+                const eventId = $(this).data('id');
+                showEventDetails(eventId);
+            });
+
+            // 加载事件列表
+            function loadEvents() {
+                $('#events-body').html('<tr id="loading-row"><td colspan="7" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>加载事件...</td></tr>');
+
+                let url = '/api/events?limit=100';
+                if (currentFilter.ip) {
+                    url += '&client_ip=' + encodeURIComponent(currentFilter.ip);
+                }
+                if (currentFilter.session) {
+                    url += '&session_id=' + encodeURIComponent(currentFilter.session);
+                }
+
+                $.get(url, function(data) {
+                    const events = data.events || [];
+                    $('#events-body').empty();
+                    $('#event-count').text(events.length);
+
+                    if (events.length === 0) {
+                        $('#events-body').html('<tr><td colspan="7" class="text-center text-muted py-4">暂无事件</td></tr>');
+                    } else {
+                        events.forEach(event => addEventRow(event, false));
+                    }
+                }).fail(function() {
+                    $('#events-body').html('<tr><td colspan="7" class="text-center text-danger py-4">加载失败</td></tr>');
+                });
+            }
+
+            // 添加一行事件到表格
+            function addEventRow(event, prepend = false) {
+                const row = createEventRow(event);
+                if (prepend) {
+                    $('#events-body').prepend(row);
+                } else {
+                    $('#events-body').append(row);
+                }
+                $('#event-count').text($('#events-body tr').length);
+            }
+
+            // 创建事件行 HTML
+            function createEventRow(event) {
+                const timestamp = new Date(event.timestamp * 1000).toLocaleString();
+                const tagsHtml = (event.threat_tags || []).map(tag => {
+                    let cls = 'threat-tag';
+                    if (tag.includes('malicious')) cls += ' malicious';
+                    else if (tag.includes('confidence:high')) cls += ' confidence-high';
+                    else if (tag.includes('confidence:medium')) cls += ' confidence-medium';
+                    return `<span class="${cls}">${tag}</span>`;
+                }).join('');
+
+                return `<tr class="event-row">
+                    <td>${timestamp}</td>
+                    <td><span class="badge bg-secondary badge-protocol">${event.protocol || 'ssh'}</span></td>
+                    <td>${event.client_ip || '?'}</td>
+                    <td class="command-preview" title="${escapeHtml(event.command)}">${escapeHtml(truncate(event.command, 50))}</td>
+                    <td class="response-preview" title="${escapeHtml(event.response || '')}">${escapeHtml(truncate(event.response || '', 50))}</td>
+                    <td>${tagsHtml}</td>
+                    <td><button class="btn btn-sm btn-outline-primary view-event" data-id="${event.id}"><i class="fas fa-eye"></i></button></td>
+                </tr>`;
+            }
+
+            // 显示事件详情模态框
+            function showEventDetails(eventId) {
+                $.get('/api/events/' + eventId, function(event) {
+                    $('#modal-command').text(event.command || '');
+                    $('#modal-response').text(event.response || '');
+                    $('#modal-session').text(event.session_id || '');
+                    $('#modal-ip').text(event.client_ip || '');
+                    $('#modal-protocol').text(event.protocol || 'ssh');
+                    $('#modal-timestamp').text(new Date(event.timestamp * 1000).toLocaleString());
+
+                    const tagsHtml = (event.threat_tags || []).map(tag => {
+                        let cls = 'threat-tag';
+                        if (tag.includes('malicious')) cls += ' malicious';
+                        else if (tag.includes('confidence:high')) cls += ' confidence-high';
+                        else if (tag.includes('confidence:medium')) cls += ' confidence-medium';
+                        return `<span class="${cls} me-1">${tag}</span>`;
+                    }).join('');
+                    $('#modal-tags').html(tagsHtml || '无');
+
+                    if (event.error) {
+                        $('#modal-error-text').text(event.error);
+                        $('#modal-error').show();
+                    } else {
+                        $('#modal-error').hide();
+                    }
+
+                    modal.show();
+                }).fail(function() {
+                    alert('无法加载事件详情');
+                });
+            }
+
+            // 加载统计信息
+            function loadStats() {
+                $.get('/api/stats', function(stats) {
+                    $('#stat-total').text(stats.total_events || 0);
+                    $('#stat-ips').text(stats.unique_ips || 0);
+                    if (stats.last_event_time) {
+                        $('#stat-last').text(new Date(stats.last_event_time * 1000).toLocaleString());
+                    } else {
+                        $('#stat-last').text('从未');
+                    }
+                }).fail(function() {
+                    console.error('Failed to load stats');
+                });
+            }
+
+            // 更新统计信息（简单调用 loadStats）
+            function updateStats() {
+                loadStats();
+            }
+
+            // 判断事件是否匹配当前过滤条件
+            function matchesFilter(event) {
+                if (currentFilter.ip && event.client_ip !== currentFilter.ip) return false;
+                if (currentFilter.session && event.session_id !== currentFilter.session) return false;
+                return true;
+            }
+
+            // 辅助函数：截断字符串
+            function truncate(str, len) {
+                if (!str) return '';
+                return str.length > len ? str.substring(0, len) + '...' : str;
+            }
+
+            // 辅助函数：转义 HTML 特殊字符
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        });
+    </script>
+</body>
+</html>

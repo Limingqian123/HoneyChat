@@ -1,0 +1,130 @@
+# docker-compose.yml
+# HoneyChat 生产级编排文件
+# 版本: 3.8 (支持较高特性，如健康检查、依赖控制)
+
+version: "3.8"
+
+services:
+  # ---------- 蜜罐前端服务 ----------
+  honeypot:
+    build:
+      context: ./services/honeypot
+      dockerfile: Dockerfile
+    container_name: honeychat-honeypot
+    restart: unless-stopped
+    ports:
+      # SSH 模拟端口，可根据需要修改主机端口
+      - "2222:2222"
+      # HTTP 模拟端口
+      - "8080:8080"
+    environment:
+      # RAG 引擎服务地址 (容器内服务名)
+      - HONEYPOT_RAG_ENGINE_URL=http://rag-engine:8000
+      # Dashboard 服务地址，用于推送事件
+      - HONEYPOT_DASHBOARD_URL=http://dashboard:5000
+      # 威胁情报 API 密钥 (从 .env 读取，与变量名前缀保持一致)
+      - HONEYPOT_THREAT_INTEL_API_KEY=${HONEYPOT_THREAT_INTEL_API_KEY:-}
+      # 日志级别
+      - HONEYPOT_LOG_LEVEL=INFO
+      - HONEYPOT_RAG_REQUEST_TIMEOUT=360
+    volumes:
+      # 挂载日志目录，便于外部查看
+      - ./data/logs/honeypot:/app/logs
+      # 挂载配置文件（如果需要）
+      - ./config/honeypot_config.yaml:/app/config.yaml:ro
+    depends_on:
+      rag-engine:
+        condition: service_healthy
+      dashboard:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "/app/scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - honeychat-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------- RAG 引擎服务 ----------
+  rag-engine:
+    build:
+      context: ./services/rag-engine
+      dockerfile: Dockerfile
+    container_name: honeychat-rag-engine
+    restart: unless-stopped
+    ports:
+      # 内部服务端口，不映射到主机，仅内部通信
+      - "8000"
+    environment:
+      # 模型路径（容器内）
+      - RAG_ENGINE_MODEL_PATH=/app/models/llama-2-7b-chat.Q4_K_M.gguf
+      # 向量数据库路径
+      - RAG_ENGINE_VECTOR_DB_PATH=/app/chroma_db
+      # 日志级别
+      - RAG_ENGINE_LOG_LEVEL=INFO
+      - HF_ENDPOINT=https://hf-mirror.com
+    volumes:
+      # 挂载模型文件（需提前下载或由初始化脚本处理）
+      - ./models:/app/models:ro
+      # 挂载向量数据库持久化目录
+      - ./data/chroma_db:/app/chroma_db
+      # 挂载配置文件
+      - ./config/rag_config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - honeychat-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------- Web 仪表盘服务 ----------
+  dashboard:
+    build:
+      context: ./services/dashboard
+      dockerfile: Dockerfile
+    container_name: honeychat-dashboard
+    restart: unless-stopped
+    ports:
+      # 主机访问仪表盘的端口
+      - "5000:5000"
+    environment:
+      # 数据库连接字符串 (SQLite)
+      - DASHBOARD_DATABASE_URL=sqlite:////app/data/events.db
+      # 日志级别
+      - LOG_LEVEL=INFO
+    volumes:
+      # 挂载数据库文件
+      - ./data/dashboard:/app/data
+      # 挂载配置文件
+      - ./config/dashboard_config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - honeychat-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ---------- 自定义网络 ----------
+networks:
+  honeychat-net:
+    driver: bridge

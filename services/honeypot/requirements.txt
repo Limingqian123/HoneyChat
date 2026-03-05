@@ -1,0 +1,38 @@
+# services/honeypot/requirements.txt
+# HoneyChat 蜜罐服务依赖清单
+
+# SSH 服务器实现 (基于 paramiko)
+paramiko==3.4.0
+
+# HTTP 服务器框架 (用于模拟 HTTP 服务)
+Flask==3.0.2
+Werkzeug==3.0.1
+
+# 网络请求 (用于调用 RAG 引擎和 Dashboard API)
+httpx==0.27.0
+
+# 异步支持 (用于并发处理)
+anyio==4.3.0
+
+# 配置解析 (YAML)
+PyYAML==6.0.1
+
+# 日志处理
+structlog==24.1.0
+python-json-logger==2.0.7
+
+# 威胁情报 (IP 信誉查询)
+aiohttp==3.9.3
+aiodns==3.1.1
+#maxminddb-geolite2==2023.1  # 可选，用于离线 GeoIP
+
+# 健康检查依赖
+requests==2.31.0
+
+# 类型提示 (用于开发，生产可选)
+typing-extensions==4.10.0
+pydantic==2.6.1
+pydantic-settings==2.1.0
+
+# 工具库
+python-dotenv==1.0.1

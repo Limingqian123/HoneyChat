@@ -1,0 +1,49 @@
+# .dockerignore
+# 忽略不需要复制到 Docker 镜像中的文件
+
+# 版本控制
+.git
+.gitignore
+.gitattributes
+
+# 环境文件
+.env
+.env.*
+!.env.example
+
+# 本地数据目录
+data/
+chroma_db/
+models/
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+*.pyc
+__pycache__
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 项目文档
+README.md
+LICENSE
+docs/
+
+# 测试文件
+tests/
+test_*.py
+*.test.py
+
+# 构建产物
+dist/
+build/
+*.egg-info/
+
+# 编辑器配置
+.vscode/
+.idea/
+*.iml

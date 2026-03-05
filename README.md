@@ -1,6 +1,6 @@
 # HoneyChat：基于 RAG 的对话式智能蜜罐系统
 
-HoneyChat 是一个轻量级、易部署的**对话式智能蜜罐系统**，专为研究生复试项目设计。它通过**检索增强生成（RAG）**技术，使蜜罐能够根据攻击者输入的命令，从历史攻击语料库中检索相似场景，并利用本地大语言模型（LLM）生成上下文一致、高度逼真的响应，从而有效欺骗攻击者并捕获其行为。
+HoneyChat 是一个轻量级、易部署的**对话式智能蜜罐系统**，利用**检索增强生成（RAG）**技术，使蜜罐能够根据攻击者输入的命令，从历史攻击语料库中检索相似场景，并借助本地大语言模型（LLM）生成上下文一致、高度逼真的响应，从而有效欺骗攻击者并捕获其行为。
 
 ## ✨ 核心创新点
 
@@ -37,6 +37,7 @@ HoneyChat 由三个核心服务组成：
    ```bash
    git clone https://github.com/yourname/honeychat.git
    cd honeychat
+   ```
 
 2. **配置环境变量（可选）**
 
@@ -161,12 +162,9 @@ docker-compose exec honeypot python scripts/test_attack.py
 - **集成其他威胁情报源**：在 `services/honeypot/utils/ip_utils.py` 中扩展 `ThreatIntelChecker` 类。
 - **添加更多协议模拟**：在 `services/honeypot/protocol/` 下创建新模块，参考 `ssh_server.py` 实现。
 
-## 📊 复试答辩要点
+## 📊 项目背景与价值
 
-- **创新点**：将 RAG 引入蜜罐交互，提升逼真度；结合威胁情报动态调整策略；可视化实时攻击。
-- **技术实现**：使用 FastAPI + ChromaDB + llama-cpp-python + Flask-SocketIO。
-- **部署便捷性**：全容器化，一键启动，无需 GPU，适合演示。
-- **成果展示**：可通过仪表盘直观看到攻击事件，并对比传统蜜罐的响应（可选）。
+HoneyChat 探索了将 RAG 与大语言模型应用于蜜罐交互的全新方式，旨在提升攻击者迷惑性、降低蜜罐被识别的风险。通过引入威胁情报自适应和可视化分析，帮助安全研究人员更高效地捕获和分析攻击行为。项目代码完全开源，欢迎贡献和改进。
 
 ## 📄 许可证
 
@@ -174,4 +172,4 @@ MIT License
 
 ---
 
-**HoneyChat** 项目为实验测试项目，旨在展示前沿 AI 技术与网络安全防御的结合。欢迎使用和改进！如有问题，请提交 Issue 或联系作者。
+**HoneyChat** 是一个实验性项目，旨在展示前沿 AI 技术与网络安全防御的结合。如有问题或建议，欢迎提交 Issue 或 Pull Request。

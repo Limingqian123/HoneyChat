@@ -11,6 +11,13 @@ host: "0.0.0.0"                            # 监听地址
 port: 8000                                  # 监听端口
 
 # 模型配置
+# 远程模型配置（优先使用，速度更快）
+use_remote_model: false                      # 是否使用远程模型（如 DeepSeek API）
+remote_api_key: ""                           # 远程模型 API 密钥
+remote_api_base: "https://api.deepseek.com/v1"  # 远程模型 API 基础 URL
+remote_model: "deepseek-chat"                # 远程模型名称
+
+# 本地模型配置
 model_path: "/app/models/model.bin"         # GGUF 模型文件路径
 model_n_ctx: 2048                           # 上下文窗口大小
 model_n_threads: 4                           # 推理线程数 (设为 null 表示自动)

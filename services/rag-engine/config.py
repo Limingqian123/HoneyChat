@@ -50,6 +50,23 @@ class Settings(BaseSettings):
     )
 
     # 模型配置
+    use_remote_model: bool = Field(
+        False,
+        description="是否使用远程模型 (如 DeepSeek API)"
+    )
+    remote_api_key: Optional[str] = Field(
+        None,
+        description="远程模型 API 密钥"
+    )
+    remote_api_base: str = Field(
+        "https://api.deepseek.com/v1",
+        description="远程模型 API 基础 URL"
+    )
+    remote_model: str = Field(
+        "deepseek-chat",
+        description="远程模型名称"
+    )
+
     model_path: Path = Field(
         Path("/app/models/model.bin"),
         description="LLM 模型文件路径 (GGUF 格式)"

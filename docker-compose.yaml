@@ -62,7 +62,12 @@ services:
       # 内部服务端口，不映射到主机，仅内部通信
       - "8000"
     environment:
-      # 模型路径（容器内）
+      # 远程模型配置（优先使用，速度更快）
+      - RAG_ENGINE_USE_REMOTE_MODEL=${RAG_ENGINE_USE_REMOTE_MODEL:-false}
+      - RAG_ENGINE_REMOTE_API_KEY=${RAG_ENGINE_REMOTE_API_KEY:-}
+      - RAG_ENGINE_REMOTE_API_BASE=${RAG_ENGINE_REMOTE_API_BASE:-https://api.deepseek.com/v1}
+      - RAG_ENGINE_REMOTE_MODEL=${RAG_ENGINE_REMOTE_MODEL:-deepseek-chat}
+      # 本地模型路径（容器内）
       - RAG_ENGINE_MODEL_PATH=/app/models/llama-2-7b-chat.Q4_K_M.gguf
       # 向量数据库路径
       - RAG_ENGINE_VECTOR_DB_PATH=/app/chroma_db

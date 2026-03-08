@@ -17,6 +17,7 @@ import structlog
 from config import settings, setup_logging
 from rag.vector_store import VectorStore
 from rag.llm_wrapper import LLMWrapper
+from rag.remote_llm import RemoteLLM
 from rag.prompt_templates import PromptManager, get_prompt_manager
 # 配置结构化日志
 setup_logging()
@@ -74,21 +75,29 @@ async def lifespan(app: FastAPI):
         logger.exception("Failed to initialize vector store", error=str(e))
         raise
 
-    # 初始化 LLM
+    # 初始化 LLM（本地或远程）
     try:
-        llm_wrapper = LLMWrapper(
-            model_path=settings.model_path,
-            n_ctx=settings.model_n_ctx,
-            n_threads=settings.model_n_threads,
-            n_batch=settings.model_n_batch,
-            use_mlock=settings.model_use_mlock,
-            use_mmap=settings.model_use_mmap,
-        )
-        logger.info("LLM initialized", info=llm_wrapper.get_model_info())
+        if settings.use_remote_model:
+            if not settings.remote_api_key:
+                raise ValueError("Remote API key is required when use_remote_model=True")
+            llm_wrapper = RemoteLLM(
+                api_key=settings.remote_api_key,
+                api_base=settings.remote_api_base,
+                model=settings.remote_model,
+            )
+            logger.info("Remote LLM initialized", info=llm_wrapper.get_model_info())
+        else:
+            llm_wrapper = LLMWrapper(
+                model_path=settings.model_path,
+                n_ctx=settings.model_n_ctx,
+                n_threads=settings.model_n_threads,
+                n_batch=settings.model_n_batch,
+                use_mlock=settings.model_use_mlock,
+                use_mmap=settings.model_use_mmap,
+            )
+            logger.info("Local LLM initialized", info=llm_wrapper.get_model_info())
     except Exception as e:
         logger.exception("Failed to initialize LLM", error=str(e))
-        # 如果 LLM 初始化失败，服务仍可运行但无法生成响应，需要标记为不健康
-        # 这里不抛出异常，但后续 /health 会反映
         llm_wrapper = None
 
     # 初始化提示词管理器（使用默认模板，可根据 protocol 调整）

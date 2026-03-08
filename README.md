@@ -187,6 +187,7 @@ docker-compose exec honeypot python scripts/test_attack.py
 
 - **添加更多命令模板**：编辑 `services/rag-engine/data/command_pairs.json`，添加新的命令-输出对，重启 RAG 引擎后自动加载。
 - **更换 LLM 模型**：下载其他 GGUF 模型放入 `models/`，修改 `config/rag_config.yaml` 中的 `model_path`。
+- **使用远程模型（推荐）**：当本地模型运行缓慢时，可切换到 DeepSeek 等远程 API。在 `.env` 中设置 `RAG_ENGINE_USE_REMOTE_MODEL=true` 和 `RAG_ENGINE_REMOTE_API_KEY=your_key`，响应速度提升 60%+。详见 [远程模型指南](docs/REMOTE_MODEL_GUIDE.md)。
 - **配置威胁情报**：在 `.env` 中配置 `HONEYPOT_THREAT_INTEL_API_KEY`，使用 VirusTotal API（获取地址：https://www.virustotal.com/gui/my-apikey）。
 - **添加攻击场景**：编辑 `services/honeypot/scenario_engine.py`，添加新的 `Scenario` 定义，配置触发关键词和诱饵文件。
 - **自定义虚拟文件系统**：修改 `services/honeypot/virtual_fs.py` 中的 `_init_default_fs()` 方法，添加更多虚拟文件和目录。
@@ -196,6 +197,7 @@ docker-compose exec honeypot python scripts/test_attack.py
 
 - [扩展设计文档](docs/EXTENSION_DESIGN.md) - 新功能架构设计
 - [使用指南](docs/USAGE_GUIDE.md) - 详细功能使用说明
+- [远程模型指南](docs/REMOTE_MODEL_GUIDE.md) - DeepSeek 等远程 API 配置
 - [威胁情报配置](docs/THREAT_INTEL_GUIDE.md) - 威胁情报API配置指南
 - [部署指南](docs/DEPLOYMENT.md) - 生产环境部署步骤
 

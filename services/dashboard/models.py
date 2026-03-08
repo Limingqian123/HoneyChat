@@ -28,6 +28,9 @@ class Event(db.Model):
     error = db.Column(db.String(255), nullable=True)
     timestamp = db.Column(db.Float, nullable=False)  # Unix timestamp
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # 新增字段
+    attack_phase = db.Column(db.String(50), nullable=True)  # 攻击阶段
+    risk_score = db.Column(db.Integer, nullable=True, default=0)  # 风险评分
 
     # 复合索引
     __table_args__ = (
@@ -51,4 +54,6 @@ class Event(db.Model):
             'error': self.error,
             'timestamp': self.timestamp,
             'created_at': self.created_at.isoformat() if self.created_at else None,
+            'attack_phase': self.attack_phase,
+            'risk_score': self.risk_score,
         }

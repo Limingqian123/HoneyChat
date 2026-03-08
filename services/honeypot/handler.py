@@ -16,6 +16,11 @@ from pydantic import BaseModel, Field
 
 # from .config import settings
 from config import settings
+from session_manager import session_manager
+from virtual_fs import VirtualFileSystem, FSCommandHandler
+from scenario_engine import ScenarioEngine
+from attack_analyzer import AttackAnalyzer
+from utils.threat_intel_sync import SyncThreatIntelChecker
 
 logger = structlog.get_logger(__name__)
 
@@ -26,6 +31,18 @@ _event_executor = ThreadPoolExecutor(max_workers=10)
 _http_client = httpx.Client(
     timeout=httpx.Timeout(settings.rag_request_timeout),
     limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+)
+
+# 初始化新组件
+# 注意：VFS不再是全局单例，每个session有独立实例
+_scenario_engine = ScenarioEngine()
+_attack_analyzer = AttackAnalyzer()
+
+# 初始化威胁情报检查器
+_threat_intel = SyncThreatIntelChecker(
+    api_key=settings.threat_intel_api_key,
+    cache_ttl=settings.threat_intel_cache_ttl,
+    enabled=settings.enable_threat_intel,
 )
 
 
@@ -51,6 +68,34 @@ def generate_session_id() -> str:
     return str(uuid.uuid4())
 
 
+def get_threat_tags(client_ip: Optional[str]) -> List[str]:
+    """
+    查询IP威胁情报并返回标签
+
+    :param client_ip: 客户端IP地址
+    :return: 威胁标签列表
+    """
+    if not client_ip or not settings.enable_threat_intel:
+        return []
+
+    try:
+        result = _threat_intel.check_ip(client_ip)
+        tags = _threat_intel.get_threat_tags(result)
+
+        if result.is_malicious:
+            logger.warning(
+                "Malicious IP detected",
+                ip=client_ip,
+                confidence=result.confidence,
+                tags=tags,
+            )
+
+        return tags
+    except Exception as e:
+        logger.error("Failed to get threat tags", ip=client_ip, error=str(e))
+        return []
+
+
 def process_command(
     session_id: str,
     command: str,
@@ -59,35 +104,72 @@ def process_command(
     threat_tags: Optional[List[str]] = None,
 ) -> str:
     """
-    核心命令处理函数。
+    核心命令处理函数（增强版）。
 
-    1. 构造请求，调用 RAG 引擎。
-    2. 处理错误，返回降级响应。
-    3. 异步推送事件到仪表盘（不等待结果）。
+    1. 查询IP威胁情报（首次，会话级缓存）
+    2. 获取会话状态和独立VFS
+    3. 尝试用虚拟文件系统处理命令
+    4. 如果无法处理，调用 RAG 引擎
+    5. 检查并部署攻击场景诱饵
+    6. 更新会话状态并分析攻击
+    7. 异步推送事件到仪表盘
 
     :param session_id: 会话唯一标识
     :param command: 攻击者输入的命令
     :param client_ip: 客户端 IP
     :param protocol: 协议类型 ("ssh" 或 "http")
-    :param threat_tags: 威胁情报标签列表
+    :param threat_tags: 威胁情报标签列表（可选，如未提供则自动查询）
     :return: 返回给攻击者的响应字符串
     """
+    # 1. 获取或创建会话状态
+    session = session_manager.get_or_create(session_id)
+    session.add_command(command)
+
+    # 2. 查询威胁情报（会话级缓存，只查询一次）
     if threat_tags is None:
-        threat_tags = []
+        if not session.threat_checked and client_ip:
+            session.threat_tags = get_threat_tags(client_ip)
+            session.threat_checked = True
+        threat_tags = session.threat_tags
+    else:
+        session.threat_tags = threat_tags
 
-    # 构造 RAG 请求
-    req = CommandRequest(
-        command=command,
-        session_id=session_id,
-        threat_tags=threat_tags,
-        protocol=protocol,
-        client_ip=client_ip,
-    )
+    # 3. 获取或创建会话专属的VFS
+    if 'vfs' not in session.custom_data:
+        session.custom_data['vfs'] = VirtualFileSystem()
+    vfs = session.custom_data['vfs']
+    fs_handler = FSCommandHandler(vfs)
 
-    # 调用 RAG 引擎
-    resp_text, error = _call_rag_engine(req)
+    # 4. 尝试用虚拟文件系统处理
 
-    # 异步推送事件到仪表盘
+    # 4. 尝试用虚拟文件系统处理
+    fs_response, new_cwd = fs_handler.handle(command, session.cwd)
+
+    if fs_response is not None:
+        # 文件系统命令已处理
+        if new_cwd:
+            session.cwd = new_cwd
+        resp_text = fs_response
+        error = None
+    else:
+        # 5. 调用 RAG 引擎
+        req = CommandRequest(
+            command=command,
+            session_id=session_id,
+            threat_tags=threat_tags,
+            protocol=protocol,
+            client_ip=client_ip,
+        )
+        resp_text, error = _call_rag_engine(req)
+
+    # 6. 检查并部署攻击场景
+    _scenario_engine.check_and_deploy(session_id, command, vfs)
+
+    # 7. 分析攻击阶段
+    attack_phase = _attack_analyzer.analyze_command(command)
+    risk_score = _attack_analyzer.get_risk_score(session.history)
+
+    # 6. 异步推送事件到仪表盘
     _push_event_async(
         session_id=session_id,
         command=command,
@@ -96,6 +178,8 @@ def process_command(
         protocol=protocol,
         threat_tags=threat_tags,
         error=error,
+        attack_phase=attack_phase,
+        risk_score=risk_score,
     )
 
     return resp_text
@@ -170,6 +254,8 @@ def _push_event_async(
     protocol: str,
     threat_tags: Optional[List[str]],
     error: Optional[str],
+    attack_phase: str = "unknown",
+    risk_score: int = 0,
 ) -> None:
     """
     异步推送事件到仪表盘（使用线程池，不阻塞）。
@@ -183,6 +269,8 @@ def _push_event_async(
         protocol=protocol,
         threat_tags=threat_tags,
         error=error,
+        attack_phase=attack_phase,
+        risk_score=risk_score,
     )
 
 
@@ -194,6 +282,8 @@ def _send_event_to_dashboard(
     protocol: str,
     threat_tags: Optional[List[str]],
     error: Optional[str],
+    attack_phase: str = "unknown",
+    risk_score: int = 0,
 ) -> None:
     """
     实际向仪表盘 API 发送事件。
@@ -208,6 +298,8 @@ def _send_event_to_dashboard(
         "threat_tags": threat_tags or [],
         "error": error,
         "timestamp": time.time(),
+        "attack_phase": attack_phase,
+        "risk_score": risk_score,
     }
 
     try:

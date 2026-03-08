@@ -116,6 +116,8 @@ def receive_event():
             threat_tags=data.get('threat_tags', []),
             error=data.get('error'),
             timestamp=data['timestamp'],
+            attack_phase=data.get('attack_phase'),
+            risk_score=data.get('risk_score', 0),
         )
         db.session.add(event)
         db.session.commit()
